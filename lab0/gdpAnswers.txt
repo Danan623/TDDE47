@@ -1,0 +1,29 @@
+• What is the macro corresponding to the syscall number in this case?
+
+ANSWER:
+    (gdb) x/5w f->esp	x = examine memory, /5w = say to debugger to display next 5 words 
+    , f->esp = say to debugger to examine the value of esp pointer in f struct. 
+    systemcall number: 9 = SYS_WRITE 
+
+• What is the second parameter related to and what does it mean in this
+case?
+
+ANSWER:
+    1 is the file describtor for standard output.
+    In Unix-like operating systems, a file descriptor is a integer value that is used to identify an open file or a network socket. 
+    The standard input, standard output and standard error are represented by file descriptor 0, 1 and 2 respectively.
+    In this case, the second parameter of 1 means that the system call is attempting to write to the standard output (i.e. the console or terminal window). 
+    It could be used to print the string specified in the third parameter to the console.
+
+• Use GDB to print the string that the pointer in the third parameter refers
+to. Hint: Use the x/s command variant to examine memory and treat it
+as a string. You need to dereference the pointer using an asterisk to access
+the contents of the memory (just like in C). Since GDB doesn’t know the
+data type of the memory location that the pointer points to (it’s a void
+pointer), you also need to cast it to a (char **).
+
+ANSWER:
+    the third word is -1073742044, which is the address of the user space string that is supposed to be printed by the system call. 
+    x = examine mem, s = say to the debugger to display string
+    The asterisk (*) before (char**) is used to dereference the pointer, allowing GDB to access the contents of the memory location that the pointer points to.
+    The (char**) is a type cast, it tells GDB that the memory location being examined is a pointer to a char, allowing GDB to treat the memory as a string.
