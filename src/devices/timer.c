@@ -102,8 +102,8 @@ timer_elapsed (int64_t then)
  * and aux is a pointer to a variable that can be used to pass data to the comparator function.
 */
 bool comparator(const struct list_elem *a, const struct list_elem *b, void *aux) {
-  struct thread *first = list_entry(a, struct thread, elem);// get the thread struct from the list element
-  struct thread *second = list_entry(b, struct thread, elem);
+  struct thread *first = list_entry(a, struct thread, second_elem);// get the thread struct from the list element
+  struct thread *second = list_entry(b, struct thread, second_elem);
   int64_t first_value = first->wakeup_time; // may result in data loss if not casted to int64_t
   int64_t second_value = second->wakeup_time;
   
@@ -134,7 +134,7 @@ timer_sleep (int64_t ticks)
 
   thread->wakeup_time = start + ticks;// set the wakeup time of the thread to the current time + the number of ticks to sleep for
 
-  list_insert_ordered(&sleeping_list, &thread->elem, comparator, NULL);// insert thread into sleeping list in order of wakeup time
+  list_insert_ordered(&sleeping_list, &thread->second_elem, comparator, NULL);// insert thread into sleeping list in order of wakeup time
     
   thread_block();// block the thread
   
@@ -180,7 +180,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   while (!list_empty(&sleeping_list))//  iterate through the sleeping list
     {
       struct list_elem *e = list_begin(&sleeping_list); // get the first element in the sleeping list
-      struct thread *t = list_entry(e, struct thread, elem); // get the thread struct from the list element
+      struct thread *t = list_entry(e, struct thread, second_elem); // get the thread struct from the list element
       if (t->wakeup_time <= ticks)  // if the thread's wakeup time is less than or equal to the current time
         {
           list_remove(e);   // remove the thread from the sleeping list

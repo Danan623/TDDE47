@@ -126,18 +126,24 @@ process_exit (void)
   struct thread *cur = thread_current ();
   struct parent_child *family = cur->family; //Get relationship from child thread
   struct list *list = &cur->child_list; //Get child_list from child thread
-  
   sema_down(&family->sema); //Decrement sema
+  family->alive_count--;
+  family->exit_status = cur->status; //Set exit_status to enum thread_status status in struct thread
+  if (family->alive_count = 0) {
+    free(family);
+  }
+  sema_up(&family->sema);
   while (!list_empty(list)){ //Kolla om listan är tom
     struct list_elem *e = list_pop_front(list); //Ta bort första elementet i listan
     family = list_entry(e, struct parent_child, list_elem); //Hämta struct parent_child från list_elem
+    sema_down(&family->sema); //Decrement sema
     family->alive_count--; //Decrement alive_count
+    family->exit_status = cur->status; //Set exit_status to enum thread_status status in struct thread
     if (family->alive_count == 0) {   //If alive_count == 0, free(relationship)
       free(family);
     }
-    family->exit_status = cur->status; //Set exit_status to enum thread_status status in struct thread
+    sema_up(&family->sema); //Increment sema
   }
-  sema_up(&family->sema); //Increment sema
   uint32_t *pd; 
 
   /* Destroy the current process's page directory and switch back
