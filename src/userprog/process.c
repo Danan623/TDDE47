@@ -48,7 +48,7 @@ process_execute (const char *file_name)
   relationship->alive_count = 2; //Alive count is 2, one for parent and one for child
 
   tid = thread_create(file_name, PRI_DEFAULT, start_process, relationship); //Create thread with start_process
-  sema_down(&relationship->sema); //Wait for start_process to finish
+  //sema_down(&relationship->sema); //Wait for start_process to finish
 
   /* Check if child thread was successfully created */
   if (tid == TID_ERROR) { 
@@ -56,6 +56,7 @@ process_execute (const char *file_name)
     palloc_free_page(fn_copy); //Free memory allocated for fn_copy
     return tid; 
   }
+  sema_down(&relationship->sema); //Wait for start_process to finish - after thread_create so a deadlock doesn't occur
 
   /* Add child to parent's child_list */
   list_push_back(&thread_current()->child_list, &relationship->list_elem); //Add child to parent's child_list 
@@ -84,8 +85,9 @@ start_process (void *p)
   success = load (file_name, &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
-  palloc_free_page (file_name);
+  //palloc_free_page (file_name);
   if (!success){ 
+    palloc_free_page (file_name); //Free memory allocated for file_name - so we don't have a memory leak
     sema_up(&relationship->sema); //Let process_execute continue
     thread_exit ();
   }
@@ -127,6 +129,9 @@ process_exit (void)
   struct parent_child *family = cur->family; //Get relationship from child thread
   struct list *list = &cur->child_list; //Get child_list from child thread
   sema_down(&family->sema); //Decrement sema
+  //check if there are any children left
+  
+
   family->alive_count--;
   family->exit_status = cur->status; //Set exit_status to enum thread_status status in struct thread
   if (family->alive_count = 0) {
