@@ -48,13 +48,20 @@ process_execute (const char *file_name)
   relationship->alive_count = 2; //Alive count is 2, one for parent and one for child
 
   tid = thread_create(file_name, PRI_DEFAULT, start_process, relationship); //Create thread with start_process
-  sema_down(&relationship->sema); //Wait for start_process to finish
+
 
   /* Check if child thread was successfully created */
   if (tid == TID_ERROR) { 
     free(relationship); //Free memory allocated for relationship
     palloc_free_page(fn_copy); //Free memory allocated for fn_copy
     return tid; 
+  }
+  
+  sema_down(&relationship->sema); //Wait for start_process to finish
+  
+  if (!relationship->load_success) {
+    free(relationship);
+    return TID_ERROR;
   }
 
   /* Add child to parent's child_list */
@@ -82,10 +89,11 @@ start_process (void *p)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-
+  relationship->load_success = success;
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success){ 
+    relationship->exit_status = -1; //If load failed, set exit_status to -1
     sema_up(&relationship->sema); //Let process_execute continue
     thread_exit ();
   }
@@ -286,7 +294,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
           argc++; //increment number of tokens
   }
 
-  *esp -= 1; //Initial offset
+  //*esp -= 1; //Initial offset
   //INSERT CHARS into STACK
   for (int i = argc - 1; i >= 0; i--) {
     *esp -= strlen(argv[i]) + 1;
@@ -294,10 +302,9 @@ load (const char *file_name, void (**eip) (void), void **esp)
     argv[i] = (char*)*esp; //Spara adressen till karaktären eftersom vi är klar med innehållet i indexet.
   }
   //FIX PADDING
-  padding = (4 - (int) *esp % 4) % 4; // beräkna paddingen (för att få stacken 4-byte aligned "word aligned")
-  *esp -= padding;
-  *esp -= sizeof(char*);
-  memset(*esp, NULL, sizeof(char*));
+  padding = ((unsigned)*esp) % 4; // Adjust the stack pointer so it is divisible by 4
+  *esp -= padding; // tar bort resten från esp % 4 så vi kan korrigera esp enligt de vi vill.
+  memset(*esp, 0, padding);
   //CHARS AND NULL ADRESS FIXED
 
   // pusha argv adresserna till stacken
@@ -305,11 +312,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
     *esp -= sizeof(char *); // move the stack pointer
     memcpy(*esp, &argv[i], sizeof(char *)); // push the address of the token to the stack (it "copies" 4 bytes from argv[i] to *esp)
    // printf("argv = %s \n", argv[i]);
-    argv[i] = (char*)*esp; //Spara adressen till karaktären eftersom vi är klar med innehållet i indexet.
+   // argv[i] = (char*)*esp; //Spara adressen till karaktären eftersom vi är klar med innehållet i indexet.
   } 
 
-  *esp -= sizeof(char **); // move the stack pointer
-  memcpy(*esp, &argv, sizeof(char **)); // push the address of the argv array to the stack (it "copies" 4 bytes from argv to *esp)
+  //*esp -= sizeof(char **); // move the stack pointer
+  //memcpy(*esp, &argv, sizeof(char **)); // push the address of the argv array to the stack (it "copies" 4 bytes from argv to *esp)
+  void *temp = *esp;
+  *esp -= 4;
+  memcpy(*esp, &temp, sizeof(char**));
+  
   //pusha argc till stacken
   *esp -= sizeof(int); // move the stack pointer
   memcpy(*esp, &argc, sizeof(int)); // push the argc to the stack (it "copies" 4 bytes from argc to *esp)
