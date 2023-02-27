@@ -113,6 +113,11 @@ struct parent_child {
    struct thread *child;
    char *file_name;
    struct semaphore sema;
+   bool load_success; //For lab3
+
+   //En sema för initiering
+   //En sema för exit, för decrementing av alive-count
+   //En sema för wait, 
    struct list_elem list_elem;
 };
 

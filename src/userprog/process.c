@@ -58,6 +58,11 @@ process_execute (const char *file_name)
   }
   sema_down(&relationship->sema); //Wait for start_process to finish - after thread_create so a deadlock doesn't occur
 
+  if (!relationship->load_success) {
+    free(relationship);
+    return TID_ERROR;
+  }
+
   /* Add child to parent's child_list */
   list_push_back(&thread_current()->child_list, &relationship->list_elem); //Add child to parent's child_list 
 
@@ -83,11 +88,11 @@ start_process (void *p)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
-
+  relationship->load_success = success;
   /* If load failed, quit. */
-  //palloc_free_page (file_name);
+  palloc_free_page (file_name);
   if (!success){ 
-    palloc_free_page (file_name); //Free memory allocated for file_name - so we don't have a memory leak
+    
     sema_up(&relationship->sema); //Let process_execute continue
     thread_exit ();
   }
