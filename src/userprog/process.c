@@ -92,7 +92,7 @@ start_process (void *p)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success){ 
-    
+    relationship->exit_status = -1; //If load failed, set exit status to -1
     sema_up(&relationship->sema); //Let process_execute continue
     thread_exit ();
   }
