@@ -28,36 +28,26 @@ syscall_handler (struct intr_frame *f UNUSED) // interrupt frame arg. which cont
   // Get the syscall number that corresponds to the requested system call
   int syscall_num = *((int*) f->esp);
   
-  // Check if the system call number is valid (syscall.nr.h defines the valid system call numbers)
-  /*
-  if(syscall_num < 0 || syscall_num > 12){
-    // Return error code -1
-    f->eax = -1;  //eax is the return value of the system call
-    return;
-  }
-  */
-  
-
   // File descriptor number
   int fd; // = *(int*) (f->esp + 4);
 
   // Address of user space buffer for reading/writing
-  const void *buffer; // = *(void**) (f->esp + 8);
+  const void *buffer; 
 
   // Size of the third argument object
-  unsigned size_arg3; // = *(unsigned*) (f->esp + 12);
+  unsigned size_arg3; 
 
   // Address of file name
-  const char *file; // = *((char**)(f->esp + 4));
+  const char *file; 
 
   // Size of the second argument object
-  unsigned size_arg2; // = *((unsigned*)(f->esp + 8));
+  unsigned size_arg2; 
 
   // cmd line argument
-  const char *cmd_line; // = *((char**)(f->esp + 4));
+  const char *cmd_line;
   
   // tid argument
-  tid_t tid; // = *((tid_t*)(f->esp + 4));
+  tid_t tid; 
 
   switch(syscall_num) {
     case SYS_HALT:
@@ -325,22 +315,10 @@ int write (int fd, const void *buffer, unsigned size) {
 }
 
 void validate_pointer(const void *vaddr, unsigned size) {
-  long size2 = (int) size; 
   if (check_bounds(vaddr)) //If not valid user space address and page is not null
   {
     exit(-1);
-  }
-  void *page_next = pg_round_up(vaddr); //Get next page boundary
-  size2 -= page_next - vaddr; //Decrement size of bytes to validate
-  vaddr = page_next; //Move ptr to next page boundary
-  while (size2 > 0) //Validate all bytes within a page
-  {
-    if (check_bounds(vaddr)){ //If not valid user space address and page is not null
-      exit(-1); 
-    }
-    vaddr += 4096; //Move ptr to next page boundary  (changes page one page is 4kB)
-    size2 -= 4096; //Decrement size of bytes to validate
-  }
+  }  
 }
 //Check if valid userspace address and if page mapped to current thread is not null
 bool check_bounds(const void *vaddr) { 

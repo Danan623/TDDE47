@@ -83,8 +83,6 @@ inode_init (void)
 bool
 inode_create (disk_sector_t sector, off_t length)
 {
-  // aquire lock for inode before creating inode
- // lock_acquire(&inode_lock);
   struct inode_disk *disk_inode = NULL;
   bool success = false;
 
@@ -115,8 +113,6 @@ inode_create (disk_sector_t sector, off_t length)
         } 
       free (disk_inode);
     }
-  // release lock for inode after creating inode
- // lock_release(&inode_lock); // Release lock for inode
   return success;
 }
 
@@ -140,7 +136,6 @@ inode_open (disk_sector_t sector)
           lock_release(&inode_lock); // Release lock for inode  
           return NULL;
         }
-          //lock_release(&inode_lock); // Release lock for inode
           inode_reopen (inode);
           lock_release(&inode_lock); // Release lock for inode
           return inode; 
@@ -174,13 +169,11 @@ inode_open (disk_sector_t sector)
 struct inode *
 inode_reopen (struct inode *inode)
 {
-  //lock_acquire(&inode_lock);
   if (inode != NULL) 
     {
       ASSERT(inode->open_cnt != 0);
       inode->open_cnt++;
     }
-  //lock_release(&inode_lock);
   return inode;
 }
 
@@ -227,13 +220,8 @@ inode_close (struct inode *inode)
 void
 inode_remove (struct inode *inode) 
 {
-  
   ASSERT (inode != NULL);
-  // acquire lock for inode before removing
-  //lock_acquire(&inode_lock);
   inode->removed = true;
-  // release lock for inode after removing
- // lock_release(&inode_lock);
 }
 
 /* Reads SIZE bytes from INODE into BUFFER, starting at position OFFSET.
@@ -316,12 +304,6 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 {
   // put writers in line to get served by the inode (reader-writer problem)
   // see wiki page for more info
-
-  // if deny_write_cnt is greater than 0, then the file is read-only
- // if(&inode->deny_write_cnt > 0){
- //   return 0;
- // }
- // sema_down(&inode->resource_sema); // wait for resource to be available  
 
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
