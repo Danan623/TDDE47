@@ -307,11 +307,12 @@ int write (int fd, const void *buffer, unsigned size) {
 }
 
 void validate_pointer(const void *vaddr, unsigned size) {
-  long size2 = (int) size; 
+ // long size2 = (int) size; 
   if (check_bounds(vaddr)) //If not valid user space address and page is not null
   {
     exit(-1);
   }
+  /*
   void *page_next = pg_round_up(vaddr); //Get next page boundary
   size2 -= page_next - vaddr; //Decrement size of bytes to validate
   vaddr = page_next; //Move ptr to next page boundary
@@ -323,6 +324,7 @@ void validate_pointer(const void *vaddr, unsigned size) {
     vaddr += 4096; //Move ptr to next page boundary  (changes page one page is 4kB)
     size2 -= 4096; //Decrement size of bytes to validate
   }
+  */
 }
 //Check if valid userspace address and if page mapped to current thread is not null
 bool check_bounds(const void *vaddr) { 
