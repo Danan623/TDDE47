@@ -136,8 +136,9 @@ inode_open (disk_sector_t sector)
           lock_release(&inode_lock); // Release lock for inode  
           return NULL;
         }
-          inode_reopen (inode);
           lock_release(&inode_lock); // Release lock for inode
+          inode_reopen (inode);
+          
           return inode; 
         }
     }
@@ -169,11 +170,13 @@ inode_open (disk_sector_t sector)
 struct inode *
 inode_reopen (struct inode *inode)
 {
+  lock_acquire(&inode_lock); // Release lock for inode
   if (inode != NULL) 
     {
       ASSERT(inode->open_cnt != 0);
       inode->open_cnt++;
     }
+  lock_release(&inode_lock); // Release lock for inode
   return inode;
 }
 
